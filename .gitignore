@@ -1,0 +1,11 @@
+node_modules/
+
+*.tsbuildinfo
+*.js.map
+Thumbs.db
+out/
+.DS_Store
+.env.local
+coverage/
+*.swp
+.cache/
