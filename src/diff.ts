@@ -23,6 +23,10 @@ function endpointKey(method: string, path: string): string {
   return `${method.toUpperCase()} ${path}`;
 }
 
+/**
+ * Compares two snapshots and returns a DiffResult describing all endpoint changes.
+ * Endpoints are matched by their method + path key.
+ */
 export function diffSnapshots(base: SnapshotFile, head: SnapshotFile): DiffResult {
   const changes: EndpointChange[] = [];
 
@@ -62,4 +66,11 @@ export function diffSnapshots(base: SnapshotFile, head: SnapshotFile): DiffResul
       modified: changes.filter(c => c.type === 'modified').length,
     },
   };
+}
+
+/**
+ * Returns true if the diff result contains no changes.
+ */
+export function isEmptyDiff(diff: DiffResult): boolean {
+  return diff.changes.length === 0;
 }
