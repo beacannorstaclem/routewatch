@@ -1,76 +1,71 @@
-import { SnapshotFile } from './snapshot';
+import { Endpoint } from './probe';
 
-export interface EndpointChange {
-  type: 'added' | 'removed' | 'modified';
+export interface ChangedField {
+  field: string;
+  from: unknown;
+  to: unknown;
+}
+
+export interface ChangedEndpoint {
   method: string;
   path: string;
-  before?: Record<string, unknown>;
-  after?: Record<string, unknown>;
+  changedFields: ChangedField[];
 }
 
-export interface DiffResult {
-  baseSnapshot: string;
-  headSnapshot: string;
-  changes: EndpointChange[];
-  summary: {
-    added: number;
-    removed: number;
-    modified: number;
-  };
+export interface SnapshotDiff {
+  fromFile: string;
+  toFile: string;
+  added: Endpoint[];
+  removed: Endpoint[];
+  changed: ChangedEndpoint[];
 }
 
-function endpointKey(method: string, path: string): string {
-  return `${method.toUpperCase()} ${path}`;
+export function endpointKey(ep: Endpoint): string {
+  return `${ep.method}:${ep.path}`;
 }
 
-/**
- * Compares two snapshots and returns a DiffResult describing all endpoint changes.
- * Endpoints are matched by their method + path key.
- */
-export function diffSnapshots(base: SnapshotFile, head: SnapshotFile): DiffResult {
-  const changes: EndpointChange[] = [];
+export function diffSnapshots(
+  fromEndpoints: Endpoint[],
+  toEndpoints: Endpoint[],
+  fromFile: string,
+  toFile: string
+): SnapshotDiff {
+  const fromMap = new Map(fromEndpoints.map(ep => [endpointKey(ep), ep]));
+  const toMap = new Map(toEndpoints.map(ep => [endpointKey(ep), ep]));
 
-  const baseMap = new Map<string, Record<string, unknown>>();
-  const headMap = new Map<string, Record<string, unknown>>();
+  const added: Endpoint[] = [];
+  const removed: Endpoint[] = [];
+  const changed: ChangedEndpoint[] = [];
 
-  for (const endpoint of base.endpoints) {
-    baseMap.set(endpointKey(endpoint.method, endpoint.path), endpoint);
-  }
-
-  for (const endpoint of head.endpoints) {
-    headMap.set(endpointKey(endpoint.method, endpoint.path), endpoint);
-  }
-
-  for (const [key, baseEndpoint] of baseMap) {
-    const headEndpoint = headMap.get(key);
-    if (!headEndpoint) {
-      changes.push({ type: 'removed', method: baseEndpoint.method as string, path: baseEndpoint.path as string, before: baseEndpoint });
-    } else if (JSON.stringify(baseEndpoint) !== JSON.stringify(headEndpoint)) {
-      changes.push({ type: 'modified', method: baseEndpoint.method as string, path: baseEndpoint.path as string, before: baseEndpoint, after: headEndpoint });
+  for (const [key, ep] of toMap) {
+    if (!fromMap.has(key)) {
+      added.push(ep);
     }
   }
 
-  for (const [key, headEndpoint] of headMap) {
-    if (!baseMap.has(key)) {
-      changes.push({ type: 'added', method: headEndpoint.method as string, path: headEndpoint.path as string, after: headEndpoint });
+  for (const [key, ep] of fromMap) {
+    if (!toMap.has(key)) {
+      removed.push(ep);
+    } else {
+      const toEp = toMap.get(key)!;
+      const changedFields: ChangedField[] = [];
+      const fields: (keyof Endpoint)[] = ['statusCode', 'headers'];
+      for (const field of fields) {
+        const fromVal = JSON.stringify(ep[field]);
+        const toVal = JSON.stringify(toEp[field]);
+        if (fromVal !== toVal) {
+          changedFields.push({ field, from: ep[field], to: toEp[field] });
+        }
+      }
+      if (changedFields.length > 0) {
+        changed.push({ method: ep.method, path: ep.path, changedFields });
+      }
     }
   }
 
-  return {
-    baseSnapshot: base.id,
-    headSnapshot: head.id,
-    changes,
-    summary: {
-      added: changes.filter(c => c.type === 'added').length,
-      removed: changes.filter(c => c.type === 'removed').length,
-      modified: changes.filter(c => c.type === 'modified').length,
-    },
-  };
+  return { fromFile, toFile, added, removed, changed };
 }
 
-/**
- * Returns true if the diff result contains no changes.
- */
-export function isEmptyDiff(diff: DiffResult): boolean {
-  return diff.changes.length === 0;
+export function isEmptyDiff(diff: SnapshotDiff): boolean {
+  return diff.added.length === 0 && diff.removed.length === 0 && diff.changed.length === 0;
 }
