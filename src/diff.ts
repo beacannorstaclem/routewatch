@@ -69,3 +69,16 @@ export function diffSnapshots(
 export function isEmptyDiff(diff: SnapshotDiff): boolean {
   return diff.added.length === 0 && diff.removed.length === 0 && diff.changed.length === 0;
 }
+
+/**
+ * Returns a human-readable summary string for a snapshot diff.
+ */
+export function formatDiffSummary(diff: SnapshotDiff): string {
+  const lines: string[] = [
+    `Comparing ${diff.fromFile} → ${diff.toFile}`,
+    `  Added:   ${diff.added.length}`,
+    `  Removed: ${diff.removed.length}`,
+    `  Changed: ${diff.changed.length}`,
+  ];
+  return lines.join('\n');
+}
