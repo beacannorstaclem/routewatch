@@ -35,6 +35,14 @@ describe('applyAuth', () => {
     expect(result['Authorization']).toBe(expected);
   });
 
+  it('throws if basic auth missing username', () => {
+    expect(() => applyAuth({}, { scheme: 'basic', password: 'pass' })).toThrow();
+  });
+
+  it('throws if basic auth missing password', () => {
+    expect(() => applyAuth({}, { scheme: 'basic', username: 'user' })).toThrow();
+  });
+
   it('applies custom header auth', () => {
     const result = applyAuth({}, { scheme: 'header', headerName: 'X-API-Key', headerValue: 'secret' });
     expect(result['X-API-Key']).toBe('secret');
@@ -42,6 +50,12 @@ describe('applyAuth', () => {
 
   it('throws if header auth missing fields', () => {
     expect(() => applyAuth({}, { scheme: 'header', headerName: 'X-Key' })).toThrow();
+  });
+
+  it('does not mutate the original headers object', () => {
+    const headers = { 'X-Existing': 'value' };
+    applyAuth(headers, { scheme: 'bearer', token: 'tok' });
+    expect(headers).not.toHaveProperty('Authorization');
   });
 });
 
