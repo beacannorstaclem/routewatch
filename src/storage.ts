@@ -36,7 +36,11 @@ export function loadSnapshot(name: string): unknown {
     throw new Error(`Snapshot not found: ${name}`);
   }
   const raw = fs.readFileSync(filePath, 'utf-8');
-  return JSON.parse(raw);
+  try {
+    return JSON.parse(raw);
+  } catch {
+    throw new Error(`Snapshot "${name}" contains invalid JSON`);
+  }
 }
 
 export function deleteSnapshot(name: string): void {
