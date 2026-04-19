@@ -12,6 +12,9 @@ const registry: Hook[] = [];
 
 export function registerHook(event: HookEvent, fn: HookFn, id?: string): string {
   const hookId = id ?? `${event}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  if (id && registry.some(h => h.id === id)) {
+    throw new Error(`Hook with id "${id}" is already registered`);
+  }
   registry.push({ event, fn, id: hookId });
   return hookId;
 }
