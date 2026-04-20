@@ -20,6 +20,10 @@ describe('baselineName', () => {
   it('includes tag when provided', () => {
     expect(baselineName('v2')).toBe('baseline-v2');
   });
+
+  it('handles tag with special characters', () => {
+    expect(baselineName('my-feature')).toBe('baseline-my-feature');
+  });
 });
 
 describe('parseBaselineArgs', () => {
@@ -29,6 +33,10 @@ describe('parseBaselineArgs', () => {
 
   it('parses --tag argument', () => {
     expect(parseBaselineArgs(['--tag', 'v1'])).toEqual({ tag: 'v1' });
+  });
+
+  it('ignores unknown arguments', () => {
+    expect(parseBaselineArgs(['--unknown', 'value'])).toEqual({});
   });
 });
 
@@ -44,6 +52,11 @@ describe('saveBaseline', () => {
     const result = await saveBaseline(mockSnapshot as any, 'prod');
     expect(result.name).toBe('baseline-prod');
   });
+
+  it('calls saveSnapshot with tagged name', async () => {
+    await saveBaseline(mockSnapshot as any, 'staging');
+    expect(storage.saveSnapshot).toHaveBeenCalledWith(mockSnapshot, 'baseline-staging');
+  });
 });
 
 describe('loadBaseline', () => {
@@ -57,6 +70,13 @@ describe('loadBaseline', () => {
     (storage.loadSnapshot as jest.Mock).mockResolvedValueOnce(mockSnapshot);
     const result = await loadBaseline();
     expect(result).toEqual(mockSnapshot);
+  });
+
+  it('loads baseline by tag when provided', async () => {
+    (storage.loadSnapshot as jest.Mock).mockResolvedValueOnce(mockSnapshot);
+    const result = await loadBaseline('prod');
+    expect(result).toEqual(mockSnapshot);
+    expect(storage.loadSnapshot).toHaveBeenCalledWith('baseline-prod');
   });
 });
 
