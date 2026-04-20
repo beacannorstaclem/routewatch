@@ -24,6 +24,13 @@ export function parseRedactArgs(args: Record<string, unknown>): RedactConfig {
   return { fields: [...SENSITIVE_DEFAULTS, ...fields], replacement };
 }
 
+/**
+ * Returns true if the given field name matches any entry in the redact config.
+ */
+function isSensitiveField(key: string, lowerFields: string[]): boolean {
+  return lowerFields.includes(key.toLowerCase());
+}
+
 export function redactHeaders(
   headers: Record<string, string>,
   config: RedactConfig
@@ -31,7 +38,7 @@ export function redactHeaders(
   const lower = config.fields.map((f) => f.toLowerCase());
   return Object.fromEntries(
     Object.entries(headers).map(([k, v]) =>
-      lower.includes(k.toLowerCase()) ? [k, config.replacement] : [k, v]
+      isSensitiveField(k, lower) ? [k, config.replacement] : [k, v]
     )
   );
 }
@@ -43,7 +50,7 @@ export function redactObject(
   const lower = config.fields.map((f) => f.toLowerCase());
   return Object.fromEntries(
     Object.entries(obj).map(([k, v]) =>
-      lower.includes(k.toLowerCase()) ? [k, config.replacement] : [k, v]
+      isSensitiveField(k, lower) ? [k, config.replacement] : [k, v]
     )
   );
 }
