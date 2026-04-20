@@ -40,6 +40,16 @@ test('onDiff is called when diff is not empty', async () => {
   handle.stop();
 });
 
+test('onDiff is not called when diff is empty', async () => {
+  jest.spyOn(diff, 'isEmptyDiff').mockReturnValue(true);
+  const onDiff = jest.fn();
+  const handle = startWatch({ url: 'http://localhost/health', interval: 30, onDiff });
+  await Promise.resolve();
+  await Promise.resolve();
+  expect(onDiff).not.toHaveBeenCalled();
+  handle.stop();
+});
+
 test('onError is called on fetch failure', async () => {
   (fetch.fetchEndpoint as jest.Mock).mockRejectedValue(new Error('network error'));
   const onError = jest.fn();
