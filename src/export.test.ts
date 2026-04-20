@@ -49,6 +49,14 @@ describe('exportSnapshot', () => {
   it('throws on unsupported format', () => {
     expect(() => exportSnapshot(mockSnapshot, 'xml' as any)).toThrow('Unsupported export format');
   });
+
+  it('exports snapshot with empty endpoints as CSV with only header', () => {
+    const emptySnapshot: Snapshot = { ...mockSnapshot, endpoints: [] };
+    const result = exportSnapshot(emptySnapshot, 'csv');
+    const lines = result.split('\n');
+    expect(lines[0]).toBe('method,url,status,latency_ms');
+    expect(lines).toHaveLength(1);
+  });
 });
 
 describe('exportDiff', () => {
@@ -72,5 +80,9 @@ describe('exportDiff', () => {
     expect(result).toContain('## Removed');
     expect(result).toContain('## Changed');
     expect(result).toContain('status');
+  });
+
+  it('throws on unsupported format', () => {
+    expect(() => exportDiff(mockDiff, 'xml' as any)).toThrow('Unsupported export format');
   });
 });
