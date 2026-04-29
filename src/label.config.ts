@@ -43,3 +43,15 @@ export function loadLabelConfig(configPath?: string): LabelConfig {
 export function labelConfigToOptions(config: LabelConfig): LabelOptions {
   return { labels: config.labels ?? {}, prefix: config.prefix }
 }
+
+/**
+ * Merges two LabelConfig objects, with values from `override` taking
+ * precedence over those in `base`. Individual label entries are merged
+ * at the key level so that only conflicting keys are overwritten.
+ */
+export function mergeLabelConfigs(base: LabelConfig, override: LabelConfig): LabelConfig {
+  return {
+    labels: { ...(base.labels ?? {}), ...(override.labels ?? {}) },
+    prefix: override.prefix ?? base.prefix,
+  }
+}
